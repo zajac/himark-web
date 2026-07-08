@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>himark</title>
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      #canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" tabindex="0"></canvas>
+    <script>
+      const canvas = document.getElementById("canvas");
+      canvas.focus();
+      var Module = { canvas };
+    </script>
+    <script async src="./web.js"></script>
+  </body>
+</html>
