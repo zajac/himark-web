@@ -82,13 +82,17 @@
     <canvas id="canvas" tabindex="0"></canvas>
     <input id="file" type="file" multiple hidden accept=".md,.markdown,.rs,.txt" />
     <script>
+      // Everything but Module stays out of global scope: emscripten's
+      // web.js declares its own top-level names (`run` among them).
+      var Module;
+      (() => {
       const canvas = document.getElementById("canvas");
       canvas.focus();
 
       // The command bridge: the app polls himarkPoll() once per frame and
       // receives queued commands, fields joined with \x01.
       const queue = [];
-      var Module = {
+      Module = {
         canvas,
         himarkPoll: () => (queue.length ? queue.shift() : ""),
       };
@@ -103,13 +107,13 @@
         canvas.focus();
       });
 
-      const run = (cmd) => {
+      const invoke = (cmd) => {
         if (cmd === "open-file") file.click();
         else queue.push(cmd);
         canvas.focus();
       };
       document.querySelectorAll("#bar button").forEach((button) => {
-        button.addEventListener("click", () => run(button.dataset.cmd));
+        button.addEventListener("click", () => invoke(button.dataset.cmd));
       });
 
       // Shortcuts the wasm side cannot own: the file picker needs a user
@@ -125,6 +129,7 @@
           queue.push("search");
         }
       });
+      })();
     </script>
     <script async src="./web.js"></script>
   </body>
