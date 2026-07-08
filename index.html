@@ -12,22 +12,119 @@
         margin: 0;
         overflow: hidden;
         background: #fff;
+        font-family: system-ui, sans-serif;
+      }
+
+      #bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 8px;
+        background: #1f2937;
+        color: #e5e7eb;
+        z-index: 10;
+        user-select: none;
+      }
+
+      #bar button {
+        background: transparent;
+        color: inherit;
+        border: none;
+        border-radius: 6px;
+        padding: 5px 10px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      #bar button:hover {
+        background: #374151;
+      }
+
+      #bar .brand {
+        font-weight: 600;
+        margin-right: 8px;
+        font-size: 13px;
+      }
+
+      #bar .hint {
+        margin-left: auto;
+        font-size: 12px;
+        color: #9ca3af;
       }
 
       #canvas {
         display: block;
+        position: fixed;
+        top: 34px;
+        left: 0;
         width: 100vw;
-        height: 100vh;
+        height: calc(100vh - 34px);
         outline: none;
       }
     </style>
   </head>
   <body>
+    <div id="bar">
+      <span class="brand">himark</span>
+      <button data-cmd="open-file">Open…</button>
+      <button data-cmd="docs">Documents</button>
+      <button data-cmd="search">Search</button>
+      <button data-cmd="peeker">Peeker</button>
+      <button data-cmd="split">Split</button>
+      <button data-cmd="demo">Demo doc</button>
+      <span class="hint">⌘O open · ⌘F search · ⌘P peeker · ⌘D split</span>
+    </div>
     <canvas id="canvas" tabindex="0"></canvas>
+    <input id="file" type="file" multiple hidden accept=".md,.markdown,.rs,.txt" />
     <script>
       const canvas = document.getElementById("canvas");
       canvas.focus();
-      var Module = { canvas };
+
+      // The command bridge: the app polls himarkPoll() once per frame and
+      // receives queued commands, fields joined with \x01.
+      const queue = [];
+      var Module = {
+        canvas,
+        himarkPoll: () => (queue.length ? queue.shift() : ""),
+      };
+
+      const file = document.getElementById("file");
+      file.addEventListener("change", async () => {
+        for (const picked of file.files) {
+          const text = await picked.text();
+          queue.push(["open", picked.name, text].join("\x01"));
+        }
+        file.value = "";
+        canvas.focus();
+      });
+
+      const run = (cmd) => {
+        if (cmd === "open-file") file.click();
+        else queue.push(cmd);
+        canvas.focus();
+      };
+      document.querySelectorAll("#bar button").forEach((button) => {
+        button.addEventListener("click", () => run(button.dataset.cmd));
+      });
+
+      // Shortcuts the wasm side cannot own: the file picker needs a user
+      // gesture from JS; search has no in-app binding yet.
+      window.addEventListener("keydown", (event) => {
+        if (!(event.metaKey || event.ctrlKey)) return;
+        const key = event.key.toLowerCase();
+        if (key === "o") {
+          event.preventDefault();
+          file.click();
+        } else if (key === "f") {
+          event.preventDefault();
+          queue.push("search");
+        }
+      });
     </script>
     <script async src="./web.js"></script>
   </body>
